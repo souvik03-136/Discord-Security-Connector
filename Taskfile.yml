@@ -1,0 +1,156 @@
+version: '3'
+
+tasks:
+  # Development
+  dev:
+    desc: Hot reload development server
+    cmds:
+      - cmd: air
+        platforms: [linux, darwin]
+      - cmd: air
+        platforms: [windows]
+    sources:
+      - ./**/*.go
+      - ./configs/*.yaml
+
+  run:
+    desc: Build and run locally
+    cmds:
+      - cmd: go build -o bin/discord-security-connector ./cmd/server && ./bin/discord-security-connector
+        platforms: [linux, darwin]
+      - cmd: go build -o bin/discord-security-connector.exe ./cmd/server && .\bin\discord-security-connector.exe
+        platforms: [windows]
+
+  # Build
+  build:
+    desc: Single platform build
+    cmds:
+      - cmd: go build -o bin/discord-security-connector ./cmd/server
+        platforms: [linux, darwin]
+      - cmd: go build -o bin/discord-security-connector.exe ./cmd/server
+        platforms: [windows]
+
+  build-all:
+    desc: Multi-platform builds
+    cmds:
+      - cmd: |
+          GOOS=linux GOARCH=amd64 go build -o bin/discord-security-connector-linux-amd64 ./cmd/server
+          GOOS=darwin GOARCH=amd64 go build -o bin/discord-security-connector-darwin-amd64 ./cmd/server
+          GOOS=windows GOARCH=amd64 go build -o bin/discord-security-connector-windows-amd64.exe ./cmd/server
+        platforms: [linux, darwin]
+      - cmd: |
+          $env:GOOS="linux"; $env:GOARCH="amd64"; go build -o bin/discord-security-connector-linux-amd64 ./cmd/server
+          $env:GOOS="darwin"; $env:GOARCH="amd64"; go build -o bin/discord-security-connector-darwin-amd64 ./cmd/server
+          $env:GOOS="windows"; $env:GOARCH="amd64"; go build -o bin/discord-security-connector-windows-amd64.exe ./cmd/server
+        platforms: [windows]
+
+  # Code Quality
+  quality:
+    desc: Run all quality checks
+    cmds:
+      - task: lint
+      - task: security
+
+  lint:
+    desc: Linting with golangci-lint
+    cmd: golangci-lint run ./...
+
+  security:
+    desc: Security scanning with gosec
+    cmd: gosec ./...
+
+  # Docker Operations
+  docker-build:
+    desc: Build Docker image
+    cmd: docker build -t discord-security-connector:latest -f deployments/docker/Dockerfile .
+
+  docker-compose-up:
+    desc: Local development stack
+    cmd: docker-compose up -d
+
+  # Deployment
+  deploy-staging:
+    desc: Staging deployment
+    cmds:
+      - cmd: ./scripts/deploy.sh staging
+        platforms: [linux, darwin]
+      - cmd: .\scripts\deploy.ps1 staging
+        platforms: [windows]
+    preconditions:
+      - sh: test -f scripts/deploy.sh || test -f scripts/deploy.ps1
+        msg: "Deployment script not found"
+
+  deploy-prod:
+    desc: Production deployment
+    cmds:
+      - cmd: ./scripts/deploy.sh production
+        platforms: [linux, darwin]
+      - cmd: .\scripts\deploy.ps1 production
+        platforms: [windows]
+    preconditions:
+      - sh: test -f scripts/deploy.sh || test -f scripts/deploy.ps1
+        msg: "Deployment script not found"
+
+  terraform-plan:
+    desc: Terraform plan
+    dir: deployments/terraform
+    cmd: terraform plan
+
+  terraform-apply:
+    desc: Terraform apply
+    dir: deployments/terraform
+    cmd: terraform apply -auto-approve
+
+  # Database Management
+  db-migrate-up:
+    desc: Run database migrations
+    cmds:
+      - cmd: ./scripts/migrate.sh up
+        platforms: [linux, darwin]
+      - cmd: .\scripts\migrate.ps1 up
+        platforms: [windows]
+    preconditions:
+      - sh: test -f scripts/migrate.sh || test -f scripts/migrate.ps1
+        msg: "Migration script not found"
+
+  db-migrate-down:
+    desc: Rollback database migrations
+    cmds:
+      - cmd: ./scripts/migrate.sh down
+        platforms: [linux, darwin]
+      - cmd: .\scripts\migrate.ps1 down
+        platforms: [windows]
+    preconditions:
+      - sh: test -f scripts/migrate.sh || test -f scripts/migrate.ps1
+        msg: "Migration script not found"
+
+  db-seed:
+    desc: Seed test data
+    cmds:
+      - cmd: ./scripts/seed.sh
+        platforms: [linux, darwin]
+      - cmd: .\scripts\seed.ps1
+        platforms: [windows]
+    preconditions:
+      - sh: test -f scripts/seed.sh || test -f scripts/seed.ps1
+        msg: "Seed script not found"
+
+  # Utilities
+  tidy:
+    desc: Tidy Go modules
+    cmd: go mod tidy
+
+  # Platform-specific setup
+  setup:
+    desc: Install required tools
+    cmds:
+      - cmd: |
+          go install github.com/cosmtrek/air@latest
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+        platforms: [linux, darwin]
+      - cmd: |
+          go install github.com/cosmtrek/air@latest
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+        platforms: [windows]
