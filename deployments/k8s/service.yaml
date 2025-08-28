@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: discord-security-connector
+  labels:
+    app: discord-security-connector
+spec:
+  selector:
+    app: discord-security-connector
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: discord-security-connector-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: security.yourdomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: discord-security-connector
+            port:
+              number: 8080

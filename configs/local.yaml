@@ -1,0 +1,24 @@
+environment: "local"
+server:
+  port: 8080
+  host: "0.0.0.0"
+
+database:
+  host: "localhost"
+  port: 5432
+  name: "discord_security"
+  user: "discord_user"
+  password: "local_password"
+  sslmode: "disable"
+
+discord:
+  bot_token: "${DISCORD_BOT_TOKEN}"
+  alert_channel_id: "${ALERT_CHANNEL_ID}"
+
+logging:
+  level: "debug"
+  format: "text"
+
+security:
+  scan_interval: "30s"
+  alert_threshold: "high"
